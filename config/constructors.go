@@ -18,6 +18,7 @@ package config
 
 import (
 	"github.com/containers/ocicrypt/crypto/pkcs11"
+	"strings"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
@@ -108,10 +109,18 @@ func EncryptWithPkcs11(pkcs11Config *pkcs11.Pkcs11Config, pkcs11Pubkeys, pkcs11Y
 }
 
 // EncryptWithKeyProvider returns a CryptoConfig to encrypt with configured keyprovider parameters
-func EncryptWithKeyProvider(keyProvider [][]byte) (CryptoConfig, error) {
+// "isecl" or "isecl:something"
+func EncryptWithKeyProvider(keyProviders [][]byte) (CryptoConfig, error) {
 	dc := DecryptConfig{}
-	ep := map[string][][]byte{
-		"key-provider":     keyProvider,
+	ep := make(map[string][][]byte)
+	for _, keyProvider := range keyProviders{
+		keyProvidersStr := string(keyProvider)
+		idx := strings.Index(keyProvidersStr, ":")
+		if idx > 0{
+			ep[keyProvidersStr[:idx]] = append(ep[keyProvidersStr[:idx]], []byte(keyProvidersStr[idx+1:] ))
+		} else {
+			ep[keyProvidersStr] = append(ep[keyProvidersStr], []byte(""))
+		}
 	}
 
 	return CryptoConfig{
