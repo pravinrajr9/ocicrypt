@@ -107,6 +107,22 @@ func EncryptWithPkcs11(pkcs11Config *pkcs11.Pkcs11Config, pkcs11Pubkeys, pkcs11Y
 	}, nil
 }
 
+// EncryptWithKeyProvider returns a CryptoConfig to encrypt with configured keyprovider parameters
+func EncryptWithKeyProvider(keyProvider [][]byte) (CryptoConfig, error) {
+	dc := DecryptConfig{}
+	ep := map[string][][]byte{
+		"key-provider":     keyProvider,
+	}
+
+	return CryptoConfig{
+		EncryptConfig: &EncryptConfig{
+			Parameters:    ep,
+			DecryptConfig: dc,
+		},
+		DecryptConfig: &dc,
+	}, nil
+}
+
 // DecryptWithPrivKeys returns a CryptoConfig to decrypt with configured private keys
 func DecryptWithPrivKeys(privKeys [][]byte, privKeysPasswords [][]byte) (CryptoConfig, error) {
 	if len(privKeys) != len(privKeysPasswords) {
