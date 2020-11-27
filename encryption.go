@@ -20,6 +20,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/containers/ocicrypt/keywrap/keyprovider"
 	"io"
 	"strings"
 
@@ -46,6 +47,7 @@ func init() {
 	RegisterKeyWrapper("jwe", jwe.NewKeyWrapper())
 	RegisterKeyWrapper("pkcs7", pkcs7.NewKeyWrapper())
 	RegisterKeyWrapper("pkcs11", pkcs11.NewKeyWrapper())
+	RegisterKeyWrapper("keyprovider", keyprovider.NewKeyWrapper())
 }
 
 var keyWrappers map[string]keywrap.KeyWrapper
