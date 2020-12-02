@@ -197,9 +197,11 @@ func DecryptLayer(dc *config.DecryptConfig, encLayerReader io.Reader, desc ocisp
 func decryptLayerKeyOptsData(dc *config.DecryptConfig, desc ocispec.Descriptor) ([]byte, error) {
 	privKeyGiven := false
 	errs := ""
+	fmt.Println(keyWrapperAnnotations)
 	for annotationsID, scheme := range keyWrapperAnnotations {
 		b64Annotation := desc.Annotations[annotationsID]
 		if b64Annotation != "" {
+			fmt.Println(desc.Annotations[annotationsID])
 			keywrapper := GetKeyWrapper(scheme)
 
 			if keywrapper.NoPossibleKeys(dc.Parameters) {
@@ -241,6 +243,7 @@ func getLayerPubOpts(desc ocispec.Descriptor) ([]byte, error) {
 // of the given keywrapper with it and returns the result in case the Unwrap functions
 // does not return an error. If all attempts fail, an error is returned.
 func preUnwrapKey(keywrapper keywrap.KeyWrapper, dc *config.DecryptConfig, b64Annotations string) ([]byte, error) {
+	fmt.Println("preUnwrapKey")
 	if b64Annotations == "" {
 		return nil, nil
 	}
