@@ -29,7 +29,7 @@ import (
 )
 
 type keyProviderKeyWrapper struct {
-	
+
 }
 
 func (kw *keyProviderKeyWrapper) GetAnnotationID() string {
@@ -87,6 +87,11 @@ type command struct {
 	Args        []string `json:"args, omitempty"`
 }
 
+var runner utils.CommandExecuter
+
+func init()  {
+	runner = utils.Runner{}
+}
 // WrapKeys wraps reads out the OCICRYPT_KEYPROVIDER_CONFIG env variable and calls appropriate binary executable/grpc server for wrapping the session key for recipients and gets encrypted optsData, which
 // describe the symmetric key used for encrypting the layer
 func (kw *keyProviderKeyWrapper) WrapKeys(ec *config.EncryptConfig, optsData []byte) ([]byte, error) {
@@ -224,7 +229,7 @@ func GetProviderCommandOutput(input []byte, providersMap map[string]interface{})
 	if err != nil {
 		return nil, err
 	}
-	respBytes, err := utils.ExecuteCommand(c.CommandName, c.Args, input)
+	respBytes, err := runner.Exec(c.CommandName, c.Args, input)
 	err = json.Unmarshal(respBytes, &protocolOuput)
 
 	if err != nil {
