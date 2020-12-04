@@ -1,3 +1,19 @@
+/*
+   Copyright The ocicrypt Authors.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/
+
 package keyprovider
 
 import (
@@ -33,6 +49,9 @@ type server struct {
 	keyproviderpb.UnimplementedKeyProviderServiceServer
 }
 
+var encryptingKey []byte
+var decryptingKey []byte
+
 func init() {
 	lis, _ := net.Listen("tcp", ":50051")
 	s := grpc.NewServer()
@@ -48,9 +67,8 @@ func init() {
 func (*server) WrapKey(ctx context.Context, request *keyproviderpb.KeyProviderKeyWrapProtocolInput) (*keyproviderpb.KeyProviderKeyWrapProtocolOutput, error) {
 	var keyP KeyProviderKeyWrapProtocolInput
 	json.Unmarshal(request.KeyProviderKeyWrapProtocolInput, &keyP)
-	key := []byte("passphrasewhichneedstobe32bytes!")
 
-	c, _ := aes.NewCipher(key)
+	c, _ := aes.NewCipher(encryptingKey)
 	gcm, _ := cipher.NewGCM(c)
 	nonce := make([]byte, gcm.NonceSize())
 	io.ReadFull(rand.Reader, nonce)
@@ -78,10 +96,9 @@ func (*server) UnWrapKey(ctx context.Context, request *keyproviderpb.KeyProvider
 
 	apkt := annotationPacket{}
 	json.Unmarshal(keyP.KeyUnwrapParams.Annotation, &apkt)
-	key := []byte("passphrasewhichneedstobe32bytes!")
 	ciphertext := apkt.WrappedKey
 
-	c, _ := aes.NewCipher(key)
+	c, _ := aes.NewCipher(decryptingKey)
 	gcm, _ := cipher.NewGCM(c)
 	nonceSize := gcm.NonceSize()
 	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
@@ -101,14 +118,11 @@ func (*server) UnWrapKey(ctx context.Context, request *keyproviderpb.KeyProvider
 
 // Mock Exec Command for wrapping and unwrapping executables
 func (r TestRunner) Exec(cmdName string, args []string, input []byte) ([]byte, error) {
-	key := []byte("passphrasewhichneedstobe32bytes!")
-
 	if cmdName == "/usr/lib/keyprovider-1-wrapkey" {
-
 		var keyP KeyProviderKeyWrapProtocolInput
 		json.Unmarshal(input, &keyP)
 
-		c, _ := aes.NewCipher(key)
+		c, _ := aes.NewCipher(encryptingKey)
 		gcm, _ := cipher.NewGCM(c)
 
 		nonce := make([]byte, gcm.NonceSize())
@@ -127,7 +141,6 @@ func (r TestRunner) Exec(cmdName string, args []string, input []byte) ([]byte, e
 			},
 		})
 	} else if cmdName == "/usr/lib/keyprovider-1-unwrapkey" {
-
 		var keyP KeyProviderKeyWrapProtocolInput
 		json.Unmarshal(input, &keyP)
 
@@ -135,7 +148,7 @@ func (r TestRunner) Exec(cmdName string, args []string, input []byte) ([]byte, e
 		json.Unmarshal(keyP.KeyUnwrapParams.Annotation, &apkt)
 		ciphertext := apkt.WrappedKey
 
-		c, _ := aes.NewCipher(key)
+		c, _ := aes.NewCipher(decryptingKey)
 		gcm, _ := cipher.NewGCM(c)
 		nonceSize := gcm.NonceSize()
 		nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
@@ -184,6 +197,8 @@ func TestKeyWrapKeyProviderCommandSuccess(t *testing.T) {
 		Parameters:    parameters,
 		DecryptConfig: config.DecryptConfig{},
 	}
+	encryptingKey = []byte("passphrasewhichneedstobe32bytes!")
+	decryptingKey = []byte("passphrasewhichneedstobe32bytes!")
 	runner = TestRunner{}
 	keyWrapOutput, err := kewrapper.WrapKeys(&ec, optsData)
 	assert.NoError(t, err)
@@ -201,6 +216,65 @@ func TestKeyWrapKeyProviderCommandSuccess(t *testing.T) {
 	os.Remove(testConfigFile)
 }
 
+func TestKeyWrapKeyProviderCommandFail(t *testing.T) {
+	testConfigFile := "config.json"
+	os.Setenv("OCICRYPT_KEYPROVIDER_CONFIG", testConfigFile)
+	//Config File with executable for key wrap
+	configFile1 := `{"key-providers": {
+                "keyprovider-1": {
+                   "cmd": "/usr/lib/keyprovider-1-wrapkey",
+                   "args": []
+                },
+		"keyprovider-2": {
+                   "cmd": "/usr/lib/keyprovider-2-wrapkey",
+                   "args": []
+                }
+        }}
+        `
+	//Config File with executable for key unwrap
+	configFile2 := `{"key-providers": {
+                "keyprovider-1": {
+                   "cmd": "/usr/lib/keyprovider-1-unwrapkey",
+                   "args": []
+                },
+		"keyprovider-2": {
+                   "cmd": "/usr/lib/keyprovider-2-unwrapkey",
+                   "args": []
+                }
+        }}
+        `
+	configFile, _ := os.OpenFile(testConfigFile, os.O_CREATE|os.O_WRONLY, 0644)
+	configFile.Write([]byte(configFile1))
+	configFile.Close()
+
+	optsData := []byte("data to be encrypted")
+
+	kewrapper := NewKeyWrapper()
+
+	parameters := make(map[string][][]byte)
+	parameters["keyprovider-1"] = nil
+	ec := config.EncryptConfig{
+		Parameters:    parameters,
+		DecryptConfig: config.DecryptConfig{},
+	}
+	encryptingKey = []byte("passphrasewhichneedstobe32bytes!")
+	decryptingKey = []byte("wrongphrasewhichneedstobe32bytes")
+	runner = TestRunner{}
+	keyWrapOutput, err := kewrapper.WrapKeys(&ec, optsData)
+	assert.NoError(t, err)
+
+	configFile, _ = os.OpenFile(testConfigFile, os.O_CREATE|os.O_WRONLY, 0644)
+	configFile.Write([]byte(configFile2))
+	configFile.Close()
+
+	dc := config.DecryptConfig{
+		Parameters: nil,
+	}
+	keyUnWrapOutput, _ := kewrapper.UnwrapKey(&dc, keyWrapOutput)
+	assert.Nil(t, keyUnWrapOutput)
+	os.Remove(testConfigFile)
+}
+
 func TestKeyWrapKeyProviderGRPCSuccess(t *testing.T) {
 	path := "config.json"
 	os.Setenv("OCICRYPT_KEYPROVIDER_CONFIG", path)
@@ -208,7 +282,7 @@ func TestKeyWrapKeyProviderGRPCSuccess(t *testing.T) {
                 "keyprovider-1": {
                    "grpc": "localhost:50051"
                 },
-		"keyprovider-2": {
+	        "keyprovider-2": {
                    "grpc": "localhost:3990"
                 },
                 "keyprovider-3": {
@@ -234,6 +308,8 @@ func TestKeyWrapKeyProviderGRPCSuccess(t *testing.T) {
 	}
 
 	runner = TestRunner{}
+	encryptingKey = []byte("passphrasewhichneedstobe32bytes!")
+	decryptingKey = encryptingKey
 	keyWrapOutput, err := kewrapper.WrapKeys(&ec, optsData)
 	assert.NoError(t, err)
 
@@ -243,6 +319,7 @@ func TestKeyWrapKeyProviderGRPCSuccess(t *testing.T) {
 	keyUnWrapOutput, err := kewrapper.UnwrapKey(&dc, keyWrapOutput)
 	assert.NoError(t, err)
 	assert.Equal(t, optsData, keyUnWrapOutput)
-
 	os.Remove(path)
 }
+
+

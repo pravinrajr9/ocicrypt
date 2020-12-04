@@ -161,14 +161,16 @@ func (kw *keyProviderKeyWrapper) UnwrapKey(dc *config.DecryptConfig, jsonString 
 		if _, ok := providersMap["cmd"]; ok {
 			protocolOuput, err := GetProviderCommandOutput(input, providersMap)
 			if err != nil {
-				return nil, errors.Wrap(err, "error while retrieving keyprovider protocol output")
+				// If err is not nil, then ignore it and continue with rest of the given keyproviders
+				continue
 			}
 
 			return protocolOuput.KeyUnwrapResults.OptsData, nil
 		} else if socketFile, ok := providersMap["grpc"]; ok {
 			protocolOuput, err := GetProviderGRPCOutput(input, socketFile, OpKeyUnwrap)
 			if err != nil {
-				return nil, errors.Wrap(err, "error while retrieving keyprovider protocol grpc output")
+				// If err is not nil, then ignore it and continue with rest of the given keyproviders
+				continue
 			}
 
 			return protocolOuput.KeyUnwrapResults.OptsData, nil
