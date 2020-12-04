@@ -29,7 +29,6 @@ import (
 )
 
 type keyProviderKeyWrapper struct {
-
 }
 
 func (kw *keyProviderKeyWrapper) GetAnnotationID() string {
@@ -89,9 +88,10 @@ type command struct {
 
 var runner utils.CommandExecuter
 
-func init()  {
+func init() {
 	runner = utils.Runner{}
 }
+
 // WrapKeys wraps reads out the OCICRYPT_KEYPROVIDER_CONFIG env variable and calls appropriate binary executable/grpc server for wrapping the session key for recipients and gets encrypted optsData, which
 // describe the symmetric key used for encrypting the layer
 func (kw *keyProviderKeyWrapper) WrapKeys(ec *config.EncryptConfig, optsData []byte) ([]byte, error) {
@@ -136,7 +136,6 @@ func (kw *keyProviderKeyWrapper) WrapKeys(ec *config.EncryptConfig, optsData []b
 	}
 	return nil, nil
 }
-
 
 // UnwrapKey wraps reads out the OCICRYPT_KEYPROVIDER_CONFIG env variable and calls appropriate binary executable/grpc server for unwrapping the session key based on the protocol given in annotation for recipients and gets decrypted optsData,
 // which describe the symmetric key used for decrypting the layer
@@ -195,7 +194,7 @@ func GetProviderGRPCOutput(input []byte, socketFile interface{}, operation KeyPr
 		KeyProviderKeyWrapProtocolInput: input,
 	}
 
-	if operation == OpKeyWrap{
+	if operation == OpKeyWrap {
 		grpcOutput, err = client.WrapKey(context.Background(), req)
 		if err != nil {
 			return nil, errors.Wrap(err, "Error from grpc method")
