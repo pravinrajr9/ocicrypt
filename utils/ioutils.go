@@ -41,8 +41,6 @@ type CommandExecuter interface {
 
 type Runner struct{}
 
-var runner Runner
-
 // ExecuteCommand is used to execute a linux command line command and return the output of the command with an error if it exists.
 func (r Runner) Exec(cmdName string, args []string, input []byte) ([]byte, error) {
 	var out bytes.Buffer

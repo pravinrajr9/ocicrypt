@@ -67,12 +67,18 @@ func init() {
 // Mock grpc method which returns the wrapped key encapsulated in annotation packet in grpc response for a given key in grpc request
 func (*server) WrapKey(ctx context.Context, request *keyproviderpb.KeyProviderKeyWrapProtocolInput) (*keyproviderpb.KeyProviderKeyWrapProtocolOutput, error) {
 	var keyP KeyProviderKeyWrapProtocolInput
-	json.Unmarshal(request.KeyProviderKeyWrapProtocolInput, &keyP)
-
+	err := json.Unmarshal(request.KeyProviderKeyWrapProtocolInput, &keyP)
+	if err != nil{
+		return nil, err
+	}
 	c, _ := aes.NewCipher(encryptingKey)
 	gcm, _ := cipher.NewGCM(c)
 	nonce := make([]byte, gcm.NonceSize())
-	io.ReadFull(rand.Reader, nonce)
+	_, err = io.ReadFull(rand.Reader, nonce)
+	if err != nil{
+		return nil, err
+	}
+
 	wrappedKey := gcm.Seal(nonce, nonce, keyP.KeyWrapParams.OptsData, nil)
 
 	jsonString, _ := json.Marshal(annotationPacket{
@@ -93,10 +99,15 @@ func (*server) WrapKey(ctx context.Context, request *keyproviderpb.KeyProviderKe
 // Mock grpc method which returns the unwrapped key encapsulated in grpc response for a given wrapped key encapsulated in annotation packet in grpc request
 func (*server) UnWrapKey(ctx context.Context, request *keyproviderpb.KeyProviderKeyWrapProtocolInput) (*keyproviderpb.KeyProviderKeyWrapProtocolOutput, error) {
 	var keyP KeyProviderKeyWrapProtocolInput
-	json.Unmarshal(request.KeyProviderKeyWrapProtocolInput, &keyP)
-
+	err := json.Unmarshal(request.KeyProviderKeyWrapProtocolInput, &keyP)
+	if err != nil{
+		return nil, err
+	}
 	apkt := annotationPacket{}
-	json.Unmarshal(keyP.KeyUnwrapParams.Annotation, &apkt)
+	err = json.Unmarshal(keyP.KeyUnwrapParams.Annotation, &apkt)
+	if err != nil{
+		return nil, err
+	}
 	ciphertext := apkt.WrappedKey
 
 	c, _ := aes.NewCipher(decryptingKey)
@@ -121,13 +132,18 @@ func (*server) UnWrapKey(ctx context.Context, request *keyproviderpb.KeyProvider
 func (r TestRunner) Exec(cmdName string, args []string, input []byte) ([]byte, error) {
 	if cmdName == "/usr/lib/keyprovider-1-wrapkey" {
 		var keyP KeyProviderKeyWrapProtocolInput
-		json.Unmarshal(input, &keyP)
-
+		err := json.Unmarshal(input, &keyP)
+		if err != nil{
+			return nil, err
+		}
 		c, _ := aes.NewCipher(encryptingKey)
 		gcm, _ := cipher.NewGCM(c)
 
 		nonce := make([]byte, gcm.NonceSize())
-		io.ReadFull(rand.Reader, nonce)
+		_, err = io.ReadFull(rand.Reader, nonce)
+		if err != nil{
+			return nil, err
+		}
 		wrappedKey := gcm.Seal(nonce, nonce, keyP.KeyWrapParams.OptsData, nil)
 
 		jsonString, _ := json.Marshal(annotationPacket{
@@ -143,10 +159,15 @@ func (r TestRunner) Exec(cmdName string, args []string, input []byte) ([]byte, e
 		})
 	} else if cmdName == "/usr/lib/keyprovider-1-unwrapkey" {
 		var keyP KeyProviderKeyWrapProtocolInput
-		json.Unmarshal(input, &keyP)
-
+		err := json.Unmarshal(input, &keyP)
+		if err != nil{
+			return nil, err
+		}
 		apkt := annotationPacket{}
-		json.Unmarshal(keyP.KeyUnwrapParams.Annotation, &apkt)
+		err = json.Unmarshal(keyP.KeyUnwrapParams.Annotation, &apkt)
+		if err != nil{
+			return nil, err
+		}
 		ciphertext := apkt.WrappedKey
 
 		c, _ := aes.NewCipher(decryptingKey)
@@ -185,7 +206,8 @@ func TestKeyWrapKeyProviderCommandSuccess(t *testing.T) {
         }}
         `
 	configFile, _ := os.OpenFile(testConfigFile, os.O_CREATE|os.O_WRONLY, 0644)
-	configFile.Write([]byte(configFile1))
+	_, err := configFile.Write([]byte(configFile1))
+	assert.NoError(t, err)
 	configFile.Close()
 
 	optsData := []byte("data to be encrypted")
@@ -206,7 +228,8 @@ func TestKeyWrapKeyProviderCommandSuccess(t *testing.T) {
 	assert.NoError(t, err)
 
 	configFile, _ = os.OpenFile(testConfigFile, os.O_CREATE|os.O_WRONLY, 0644)
-	configFile.Write([]byte(configFile2))
+	_, err = configFile.Write([]byte(configFile2))
+	assert.NoError(t, err)
 	configFile.Close()
 
 	ic, _ = keyprovider_config.GetConfiguration()
@@ -251,7 +274,8 @@ func TestKeyWrapKeyProviderCommandFail(t *testing.T) {
         }}
         `
 	configFile, _ := os.OpenFile(testConfigFile, os.O_CREATE|os.O_WRONLY, 0644)
-	configFile.Write([]byte(configFile1))
+	_, err := configFile.Write([]byte(configFile1))
+	assert.NoError(t, err)
 	configFile.Close()
 
 	optsData := []byte("data to be encrypted")
@@ -271,7 +295,8 @@ func TestKeyWrapKeyProviderCommandFail(t *testing.T) {
 	assert.NoError(t, err)
 
 	configFile, _ = os.OpenFile(testConfigFile, os.O_CREATE|os.O_WRONLY, 0644)
-	configFile.Write([]byte(configFile2))
+	_, err = configFile.Write([]byte(configFile2))
+	assert.NoError(t, err)
 	configFile.Close()
 
 	dp := make(map[string][][]byte)
@@ -303,7 +328,8 @@ func TestKeyWrapKeyProviderGRPCSuccess(t *testing.T) {
         }}
         `
 	tempFile, _ := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0644)
-	tempFile.Write([]byte(filecontent))
+	_, err := tempFile.Write([]byte(filecontent))
+	assert.NoError(t, err)
 	tempFile.Close()
 
 	optsData := []byte("data to be encrypted")

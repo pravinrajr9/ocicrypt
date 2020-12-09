@@ -24,6 +24,7 @@ import (
 	"github.com/containers/ocicrypt/utils"
 	keyproviderpb "github.com/containers/ocicrypt/utils/keyprovider"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
@@ -52,16 +53,16 @@ type KeyProviderKeyWrapProtocolInput struct {
 	// Operation is either "keywrap" or "keyunwrap"
 	Operation KeyProviderKeyWrapProtocolOperation `json:"op"`
 	// KeyWrapParams encodes the arguments to key wrap if operation is set to wrap
-	KeyWrapParams KeyWrapParams `json:"keywrapparams, omitempty"`
+	KeyWrapParams KeyWrapParams `json:"keywrapparams,omitempty"`
 	// KeyUnwrapParams encodes the arguments to key unwrap if operation is set to unwrap
-	KeyUnwrapParams KeyUnwrapParams `json:"keyunwrapparams, omitempty"`
+	KeyUnwrapParams KeyUnwrapParams `json:"keyunwrapparams,omitempty"`
 }
 
 type KeyProviderKeyWrapProtocolOuput struct {
 	// KeyWrapResult encodes the results to key wrap if operation is to wrap
-	KeyWrapResults KeyWrapResults `json:"keywrapresults, omitempty"`
+	KeyWrapResults KeyWrapResults `json:"keywrapresults,omitempty"`
 	// KeyUnwrapResult encodes the result to key unwrap if operation is to unwrap
-	KeyUnwrapResults KeyUnwrapResults `json:"keyunwrapresults, omitempty"`
+	KeyUnwrapResults KeyUnwrapResults `json:"keyunwrapresults,omitempty"`
 }
 
 type KeyWrapParams struct {
@@ -84,7 +85,7 @@ type KeyWrapResults struct {
 
 type command struct {
 	CommandName string   `json:"cmd"`
-	Args        []string `json:"args, omitempty"`
+	Args        []string `json:"args,omitempty"`
 }
 
 var runner utils.CommandExecuter
@@ -110,17 +111,17 @@ func (kw *keyProviderKeyWrapper) WrapKeys(ec *config.EncryptConfig, optsData []b
 	}
 
 	// Iterate over the ec.Parameters and execute appropriate binaries or dial a grpc based on protocol mentioned in encryption config
-	for provider, _ := range ec.Parameters {
+	for provider := range ec.Parameters {
 		if kw.provider == provider {
 			providersMap := kw.args.(map[string]interface{})
 			if _, ok := providersMap["cmd"]; ok {
-				protocolOuput, err := GetProviderCommandOutput(input, providersMap)
+				protocolOuput, err := getProviderCommandOutput(input, providersMap)
 				if err != nil {
 					return nil, errors.Wrap(err, "error while retrieving keyprovider protocol command output")
 				}
 				return protocolOuput.KeyWrapResults.Annotation, nil
 			} else if socketFile, ok := providersMap["grpc"]; ok {
-				protocolOuput, err := GetProviderGRPCOutput(input, socketFile, OpKeyWrap)
+				protocolOuput, err := getProviderGRPCOutput(input, socketFile, OpKeyWrap)
 				if err != nil {
 					return nil, errors.Wrap(err, "error while retrieving keyprovider protocol grpc output")
 				}
@@ -152,7 +153,7 @@ func (kw *keyProviderKeyWrapper) UnwrapKey(dc *config.DecryptConfig, jsonString 
 
 	providersMap := kw.args.(map[string]interface{})
 	if _, ok := providersMap["cmd"]; ok {
-		protocolOuput, err := GetProviderCommandOutput(input, providersMap)
+		protocolOuput, err := getProviderCommandOutput(input, providersMap)
 		if err != nil {
 			// If err is not nil, then ignore it and continue with rest of the given keyproviders
 			return nil, err
@@ -160,7 +161,7 @@ func (kw *keyProviderKeyWrapper) UnwrapKey(dc *config.DecryptConfig, jsonString 
 
 		return protocolOuput.KeyUnwrapResults.OptsData, nil
 	} else if socketFile, ok := providersMap["grpc"]; ok {
-		protocolOuput, err := GetProviderGRPCOutput(input, socketFile, OpKeyUnwrap)
+		protocolOuput, err := getProviderGRPCOutput(input, socketFile, OpKeyUnwrap)
 		if err != nil {
 			// If err is not nil, then ignore it and continue with rest of the given keyproviders
 			return nil, err
@@ -170,16 +171,20 @@ func (kw *keyProviderKeyWrapper) UnwrapKey(dc *config.DecryptConfig, jsonString 
 	} else {
 		return nil, errors.New("unsupported keyprovider invocation. supported invocation methods are grpc and cmd ")
 	}
-
-	return nil, nil
 }
 
-func GetProviderGRPCOutput(input []byte, socketFile interface{}, operation KeyProviderKeyWrapProtocolOperation) (*KeyProviderKeyWrapProtocolOuput, error) {
+func getProviderGRPCOutput(input []byte, socketFile interface{}, operation KeyProviderKeyWrapProtocolOperation) (*KeyProviderKeyWrapProtocolOuput, error) {
 	socketFileStr := socketFile.(string)
 	var protocolOuput KeyProviderKeyWrapProtocolOuput
 	var grpcOutput *keyproviderpb.KeyProviderKeyWrapProtocolOutput
 	cc, err := grpc.Dial(socketFileStr, grpc.WithInsecure())
-	defer cc.Close()
+	defer func() {
+		derr := cc.Close()
+		if derr != nil {
+			log.WithError(derr).Error("Error closing grpc socket")
+		}
+	}()
+
 	if err != nil {
 		return nil, errors.Wrap(err, "error while dialing rpc server")
 	}
@@ -210,7 +215,7 @@ func GetProviderGRPCOutput(input []byte, socketFile interface{}, operation KeyPr
 	return &protocolOuput, nil
 }
 
-func GetProviderCommandOutput(input []byte, providersMap map[string]interface{}) (*KeyProviderKeyWrapProtocolOuput, error) {
+func getProviderCommandOutput(input []byte, providersMap map[string]interface{}) (*KeyProviderKeyWrapProtocolOuput, error) {
 
 	var protocolOuput KeyProviderKeyWrapProtocolOuput
 	// Convert interface to command structure
@@ -224,8 +229,10 @@ func GetProviderCommandOutput(input []byte, providersMap map[string]interface{})
 		return nil, err
 	}
 	respBytes, err := runner.Exec(c.CommandName, c.Args, input)
+	if err != nil{
+		return nil, err
+	}
 	err = json.Unmarshal(respBytes, &protocolOuput)
-
 	if err != nil {
 		return nil, errors.Wrap(err, "Error while unmarshalling binary executable command output")
 	}
