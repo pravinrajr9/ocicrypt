@@ -25,6 +25,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/containers/ocicrypt/config"
+	keyprovider_config "github.com/containers/ocicrypt/config/keyprovider-config"
 	keyproviderpb "github.com/containers/ocicrypt/utils/keyprovider"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
@@ -189,7 +190,8 @@ func TestKeyWrapKeyProviderCommandSuccess(t *testing.T) {
 
 	optsData := []byte("data to be encrypted")
 
-	kewrapper := NewKeyWrapper()
+	ic, _ := keyprovider_config.GetConfiguration()
+	kewrapper := NewKeyWrapper("keyprovider-1", ic.KeyProviderConfig["keyprovider-1"])
 
 	parameters := make(map[string][][]byte)
 	parameters["keyprovider-1"] = nil
@@ -207,8 +209,13 @@ func TestKeyWrapKeyProviderCommandSuccess(t *testing.T) {
 	configFile.Write([]byte(configFile2))
 	configFile.Close()
 
+	ic, _ = keyprovider_config.GetConfiguration()
+	kewrapper = NewKeyWrapper("keyprovider-1", ic.KeyProviderConfig["keyprovider-1"])
+	dp := make(map[string][][]byte)
+	dp["keyprovider-1"] = append(dp["keyprovider-1"], []byte("Supported Protocol"))
+
 	dc := config.DecryptConfig{
-		Parameters: nil,
+		Parameters: dp,
 	}
 	keyUnWrapOutput, err := kewrapper.UnwrapKey(&dc, keyWrapOutput)
 	assert.NoError(t, err)
@@ -248,8 +255,8 @@ func TestKeyWrapKeyProviderCommandFail(t *testing.T) {
 	configFile.Close()
 
 	optsData := []byte("data to be encrypted")
-
-	kewrapper := NewKeyWrapper()
+	ic, _ := keyprovider_config.GetConfiguration()
+	kewrapper := NewKeyWrapper("keyprovider-1", ic.KeyProviderConfig["keyprovider-1"])
 
 	parameters := make(map[string][][]byte)
 	parameters["keyprovider-1"] = nil
@@ -267,8 +274,11 @@ func TestKeyWrapKeyProviderCommandFail(t *testing.T) {
 	configFile.Write([]byte(configFile2))
 	configFile.Close()
 
+	dp := make(map[string][][]byte)
+	dp["keyprovider-1"] = append(dp["keyprovider-1"], []byte("Supported Protocol"))
+
 	dc := config.DecryptConfig{
-		Parameters: nil,
+		Parameters: dp,
 	}
 	keyUnWrapOutput, _ := kewrapper.UnwrapKey(&dc, keyWrapOutput)
 	assert.Nil(t, keyUnWrapOutput)
@@ -298,7 +308,8 @@ func TestKeyWrapKeyProviderGRPCSuccess(t *testing.T) {
 
 	optsData := []byte("data to be encrypted")
 
-	kewrapper := NewKeyWrapper()
+	ic, _ := keyprovider_config.GetConfiguration()
+	kewrapper := NewKeyWrapper("keyprovider-1", ic.KeyProviderConfig["keyprovider-1"])
 
 	parameters := make(map[string][][]byte)
 	parameters["keyprovider-1"] = nil
@@ -313,8 +324,12 @@ func TestKeyWrapKeyProviderGRPCSuccess(t *testing.T) {
 	keyWrapOutput, err := kewrapper.WrapKeys(&ec, optsData)
 	assert.NoError(t, err)
 
+
+	dp := make(map[string][][]byte)
+	dp["keyprovider-1"] = append(dp["keyprovider-1"], []byte("Supported Protocol"))
+
 	dc := config.DecryptConfig{
-		Parameters: nil,
+		Parameters: dp,
 	}
 	keyUnWrapOutput, err := kewrapper.UnwrapKey(&dc, keyWrapOutput)
 	assert.NoError(t, err)

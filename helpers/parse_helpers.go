@@ -317,30 +317,32 @@ func CreateCryptoConfig(recipients []string, keys []string) (encconfig.CryptoCon
 		}
 
 		// Create Encryption Crypto Config
-		pkcs7Cc, err := encconfig.EncryptWithPkcs7(x509s)
-		if err != nil {
-			return encconfig.CryptoConfig{}, err
+		if len(x509s) > 0 {
+			pkcs7Cc, err := encconfig.EncryptWithPkcs7(x509s)
+			if err != nil {
+				return encconfig.CryptoConfig{}, err
+			}
+			encryptCcs = append(encryptCcs, pkcs7Cc)
 		}
-		encryptCcs = append(encryptCcs, pkcs7Cc)
-
-		jweCc, err := encconfig.EncryptWithJwe(pubKeys)
-		if err != nil {
-			return encconfig.CryptoConfig{}, err
+		if len(pubKeys) > 0 {
+			jweCc, err := encconfig.EncryptWithJwe(pubKeys)
+			if err != nil {
+				return encconfig.CryptoConfig{}, err
+			}
+			encryptCcs = append(encryptCcs, jweCc)
 		}
-		encryptCcs = append(encryptCcs, jweCc)
-
 		var p11conf *pkcs11.Pkcs11Config
 		if len(pkcs11Yamls) > 0 {
 			p11conf, err = pkcs11config.GetUserPkcs11Config()
 			if err != nil {
 				return encconfig.CryptoConfig{}, err
 			}
+			pkcs11Cc, err := encconfig.EncryptWithPkcs11(p11conf, pkcs11Pubkeys, pkcs11Yamls)
+			if err != nil {
+				return encconfig.CryptoConfig{}, err
+			}
+			encryptCcs = append(encryptCcs, pkcs11Cc)
 		}
-		pkcs11Cc, err := encconfig.EncryptWithPkcs11(p11conf, pkcs11Pubkeys, pkcs11Yamls)
-		if err != nil {
-			return encconfig.CryptoConfig{}, err
-		}
-		encryptCcs = append(encryptCcs, pkcs11Cc)
 
 		if len(keyProvider) >0 {
 			keyProviderCc, err := encconfig.EncryptWithKeyProvider(keyProvider)

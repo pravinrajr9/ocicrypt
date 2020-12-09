@@ -61,7 +61,7 @@ func GetConfiguration() (*OcicryptConfig, error) {
 			return nil, errors.Wrap(err, "Error while parsing keyprovider config file")
 		}
 	} else {
-		return nil, errors.New(ENVVARNAME + "doesnt contain config file")
+		return nil, nil
 	}
 	return ic, nil
 }

@@ -20,6 +20,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	keyprovider_config "github.com/containers/ocicrypt/config/keyprovider-config"
 	"github.com/containers/ocicrypt/keywrap/keyprovider"
 	"io"
 	"strings"
@@ -32,6 +33,7 @@ import (
 	"github.com/containers/ocicrypt/keywrap/pkcs11"
 	"github.com/containers/ocicrypt/keywrap/pkcs7"
 	"github.com/opencontainers/go-digest"
+	log "github.com/sirupsen/logrus"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 )
@@ -47,7 +49,15 @@ func init() {
 	RegisterKeyWrapper("jwe", jwe.NewKeyWrapper())
 	RegisterKeyWrapper("pkcs7", pkcs7.NewKeyWrapper())
 	RegisterKeyWrapper("pkcs11", pkcs11.NewKeyWrapper())
-	RegisterKeyWrapper("keyprovider", keyprovider.NewKeyWrapper())
+	ic, err := keyprovider_config.GetConfiguration()
+	if err != nil {
+		log.Error(err)
+	}
+	if ic != nil {
+		for provider, args := range ic.KeyProviderConfig {
+			RegisterKeyWrapper("keyprovider."+provider, keyprovider.NewKeyWrapper(provider, args))
+		}
+	}
 }
 
 var keyWrappers map[string]keywrap.KeyWrapper
@@ -209,7 +219,6 @@ func decryptLayerKeyOptsData(dc *config.DecryptConfig, desc ocispec.Descriptor) 
 			if len(keywrapper.GetPrivateKeys(dc.Parameters)) > 0 {
 				privKeyGiven = true
 			}
-
 			optsData, err := preUnwrapKey(keywrapper, dc, b64Annotation)
 			if err != nil {
 				// try next keywrap.KeyWrapper

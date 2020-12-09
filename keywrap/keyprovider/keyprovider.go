@@ -20,7 +20,6 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/containers/ocicrypt/config"
-	keyprovider_config "github.com/containers/ocicrypt/config/keyprovider-config"
 	"github.com/containers/ocicrypt/keywrap"
 	"github.com/containers/ocicrypt/utils"
 	keyproviderpb "github.com/containers/ocicrypt/utils/keyprovider"
@@ -29,15 +28,17 @@ import (
 )
 
 type keyProviderKeyWrapper struct {
+	provider string
+	args     interface{}
 }
 
 func (kw *keyProviderKeyWrapper) GetAnnotationID() string {
-	return "org.opencontainers.image.enc.keys.experimental.keyprovider"
+	return "org.opencontainers.image.enc.keys.provider." + kw.provider
 }
 
 // NewKeyWrapper returns a new key wrapping interface using keyprovider
-func NewKeyWrapper() keywrap.KeyWrapper {
-	return &keyProviderKeyWrapper{}
+func NewKeyWrapper(p string, a interface{}) keywrap.KeyWrapper {
+	return &keyProviderKeyWrapper{provider: p, args: a}
 }
 
 type KeyProviderKeyWrapProtocolOperation string
@@ -95,10 +96,6 @@ func init() {
 // WrapKeys wraps reads out the OCICRYPT_KEYPROVIDER_CONFIG env variable and calls appropriate binary executable/grpc server for wrapping the session key for recipients and gets encrypted optsData, which
 // describe the symmetric key used for encrypting the layer
 func (kw *keyProviderKeyWrapper) WrapKeys(ec *config.EncryptConfig, optsData []byte) ([]byte, error) {
-	ic, err := keyprovider_config.GetConfiguration()
-	if err != nil {
-		return nil, err
-	}
 
 	input, err := json.Marshal(KeyProviderKeyWrapProtocolInput{
 		Operation: OpKeyWrap,
@@ -112,10 +109,10 @@ func (kw *keyProviderKeyWrapper) WrapKeys(ec *config.EncryptConfig, optsData []b
 		return nil, err
 	}
 
-	// Iterate over the keyproviders parsed from config file and execute the binaries or dial a grpc based on protocol mentioned in encryption config
-	for providers, args := range ic.KeyProviderConfig {
-		if _, ok := ec.Parameters[providers]; ok {
-			providersMap := args.(map[string]interface{})
+	// Iterate over the ec.Parameters and execute appropriate binaries or dial a grpc based on protocol mentioned in encryption config
+	for provider, _ := range ec.Parameters {
+		if kw.provider == provider {
+			providersMap := kw.args.(map[string]interface{})
 			if _, ok := providersMap["cmd"]; ok {
 				protocolOuput, err := GetProviderCommandOutput(input, providersMap)
 				if err != nil {
@@ -134,16 +131,13 @@ func (kw *keyProviderKeyWrapper) WrapKeys(ec *config.EncryptConfig, optsData []b
 			}
 		}
 	}
+
 	return nil, nil
 }
 
 // UnwrapKey wraps reads out the OCICRYPT_KEYPROVIDER_CONFIG env variable and calls appropriate binary executable/grpc server for unwrapping the session key based on the protocol given in annotation for recipients and gets decrypted optsData,
 // which describe the symmetric key used for decrypting the layer
 func (kw *keyProviderKeyWrapper) UnwrapKey(dc *config.DecryptConfig, jsonString []byte) ([]byte, error) {
-	ic, err := keyprovider_config.GetConfiguration()
-	if err != nil {
-		return nil, err
-	}
 
 	input, err := json.Marshal(KeyProviderKeyWrapProtocolInput{
 		Operation: OpKeyWrap,
@@ -156,28 +150,27 @@ func (kw *keyProviderKeyWrapper) UnwrapKey(dc *config.DecryptConfig, jsonString 
 		return nil, err
 	}
 
-	for _, args := range ic.KeyProviderConfig {
-		providersMap := args.(map[string]interface{})
-		if _, ok := providersMap["cmd"]; ok {
-			protocolOuput, err := GetProviderCommandOutput(input, providersMap)
-			if err != nil {
-				// If err is not nil, then ignore it and continue with rest of the given keyproviders
-				continue
-			}
-
-			return protocolOuput.KeyUnwrapResults.OptsData, nil
-		} else if socketFile, ok := providersMap["grpc"]; ok {
-			protocolOuput, err := GetProviderGRPCOutput(input, socketFile, OpKeyUnwrap)
-			if err != nil {
-				// If err is not nil, then ignore it and continue with rest of the given keyproviders
-				continue
-			}
-
-			return protocolOuput.KeyUnwrapResults.OptsData, nil
-		} else {
-			return nil, errors.New("unsupported keyprovider invocation. supported invocation methods are grpc and cmd ")
+	providersMap := kw.args.(map[string]interface{})
+	if _, ok := providersMap["cmd"]; ok {
+		protocolOuput, err := GetProviderCommandOutput(input, providersMap)
+		if err != nil {
+			// If err is not nil, then ignore it and continue with rest of the given keyproviders
+			return nil, err
 		}
+
+		return protocolOuput.KeyUnwrapResults.OptsData, nil
+	} else if socketFile, ok := providersMap["grpc"]; ok {
+		protocolOuput, err := GetProviderGRPCOutput(input, socketFile, OpKeyUnwrap)
+		if err != nil {
+			// If err is not nil, then ignore it and continue with rest of the given keyproviders
+			return nil, err
+		}
+
+		return protocolOuput.KeyUnwrapResults.OptsData, nil
+	} else {
+		return nil, errors.New("unsupported keyprovider invocation. supported invocation methods are grpc and cmd ")
 	}
+
 	return nil, nil
 }
 

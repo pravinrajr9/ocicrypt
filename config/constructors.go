@@ -117,9 +117,9 @@ func EncryptWithKeyProvider(keyProviders [][]byte) (CryptoConfig, error) {
 		keyProvidersStr := string(keyProvider)
 		idx := strings.Index(keyProvidersStr, ":")
 		if idx > 0{
-			ep[keyProvidersStr[:idx]] = append(ep[keyProvidersStr[:idx]], []byte(keyProvidersStr[idx+1:] ))
+			ep[keyProvidersStr[:idx]] = append(ep[keyProvidersStr[:idx]], []byte(keyProvidersStr[idx+1:]))
 		} else {
-			ep[keyProvidersStr] = append(ep[keyProvidersStr], []byte(""))
+			ep[keyProvidersStr] = append(ep[keyProvidersStr], []byte("Enabled"))
 		}
 	}
 
