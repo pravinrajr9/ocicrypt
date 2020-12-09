@@ -191,7 +191,7 @@ func TestKeyWrapKeyProviderCommandSuccess(t *testing.T) {
 	optsData := []byte("data to be encrypted")
 
 	ic, _ := keyprovider_config.GetConfiguration()
-	kewrapper := NewKeyWrapper("keyprovider-1", ic.KeyProviderConfig["keyprovider-1"])
+	keyWrapper := NewKeyWrapper("keyprovider-1", ic.KeyProviderConfig["keyprovider-1"])
 
 	parameters := make(map[string][][]byte)
 	parameters["keyprovider-1"] = nil
@@ -202,7 +202,7 @@ func TestKeyWrapKeyProviderCommandSuccess(t *testing.T) {
 	encryptingKey = []byte("passphrasewhichneedstobe32bytes!")
 	decryptingKey = []byte("passphrasewhichneedstobe32bytes!")
 	runner = TestRunner{}
-	keyWrapOutput, err := kewrapper.WrapKeys(&ec, optsData)
+	keyWrapOutput, err := keyWrapper.WrapKeys(&ec, optsData)
 	assert.NoError(t, err)
 
 	configFile, _ = os.OpenFile(testConfigFile, os.O_CREATE|os.O_WRONLY, 0644)
@@ -210,14 +210,14 @@ func TestKeyWrapKeyProviderCommandSuccess(t *testing.T) {
 	configFile.Close()
 
 	ic, _ = keyprovider_config.GetConfiguration()
-	kewrapper = NewKeyWrapper("keyprovider-1", ic.KeyProviderConfig["keyprovider-1"])
+	keyWrapper = NewKeyWrapper("keyprovider-1", ic.KeyProviderConfig["keyprovider-1"])
 	dp := make(map[string][][]byte)
 	dp["keyprovider-1"] = append(dp["keyprovider-1"], []byte("Supported Protocol"))
 
 	dc := config.DecryptConfig{
 		Parameters: dp,
 	}
-	keyUnWrapOutput, err := kewrapper.UnwrapKey(&dc, keyWrapOutput)
+	keyUnWrapOutput, err := keyWrapper.UnwrapKey(&dc, keyWrapOutput)
 	assert.NoError(t, err)
 	assert.Equal(t, optsData, keyUnWrapOutput)
 	os.Remove(testConfigFile)
@@ -256,7 +256,7 @@ func TestKeyWrapKeyProviderCommandFail(t *testing.T) {
 
 	optsData := []byte("data to be encrypted")
 	ic, _ := keyprovider_config.GetConfiguration()
-	kewrapper := NewKeyWrapper("keyprovider-1", ic.KeyProviderConfig["keyprovider-1"])
+	keyWrapper := NewKeyWrapper("keyprovider-1", ic.KeyProviderConfig["keyprovider-1"])
 
 	parameters := make(map[string][][]byte)
 	parameters["keyprovider-1"] = nil
@@ -267,7 +267,7 @@ func TestKeyWrapKeyProviderCommandFail(t *testing.T) {
 	encryptingKey = []byte("passphrasewhichneedstobe32bytes!")
 	decryptingKey = []byte("wrongphrasewhichneedstobe32bytes")
 	runner = TestRunner{}
-	keyWrapOutput, err := kewrapper.WrapKeys(&ec, optsData)
+	keyWrapOutput, err := keyWrapper.WrapKeys(&ec, optsData)
 	assert.NoError(t, err)
 
 	configFile, _ = os.OpenFile(testConfigFile, os.O_CREATE|os.O_WRONLY, 0644)
@@ -280,7 +280,7 @@ func TestKeyWrapKeyProviderCommandFail(t *testing.T) {
 	dc := config.DecryptConfig{
 		Parameters: dp,
 	}
-	keyUnWrapOutput, _ := kewrapper.UnwrapKey(&dc, keyWrapOutput)
+	keyUnWrapOutput, _ := keyWrapper.UnwrapKey(&dc, keyWrapOutput)
 	assert.Nil(t, keyUnWrapOutput)
 	os.Remove(testConfigFile)
 }
@@ -309,7 +309,7 @@ func TestKeyWrapKeyProviderGRPCSuccess(t *testing.T) {
 	optsData := []byte("data to be encrypted")
 
 	ic, _ := keyprovider_config.GetConfiguration()
-	kewrapper := NewKeyWrapper("keyprovider-1", ic.KeyProviderConfig["keyprovider-1"])
+	keyWrapper := NewKeyWrapper("keyprovider-1", ic.KeyProviderConfig["keyprovider-1"])
 
 	parameters := make(map[string][][]byte)
 	parameters["keyprovider-1"] = nil
@@ -321,7 +321,7 @@ func TestKeyWrapKeyProviderGRPCSuccess(t *testing.T) {
 	runner = TestRunner{}
 	encryptingKey = []byte("passphrasewhichneedstobe32bytes!")
 	decryptingKey = encryptingKey
-	keyWrapOutput, err := kewrapper.WrapKeys(&ec, optsData)
+	keyWrapOutput, err := keyWrapper.WrapKeys(&ec, optsData)
 	assert.NoError(t, err)
 
 
@@ -331,7 +331,7 @@ func TestKeyWrapKeyProviderGRPCSuccess(t *testing.T) {
 	dc := config.DecryptConfig{
 		Parameters: dp,
 	}
-	keyUnWrapOutput, err := kewrapper.UnwrapKey(&dc, keyWrapOutput)
+	keyUnWrapOutput, err := keyWrapper.UnwrapKey(&dc, keyWrapOutput)
 	assert.NoError(t, err)
 	assert.Equal(t, optsData, keyUnWrapOutput)
 	os.Remove(path)
