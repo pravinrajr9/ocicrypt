@@ -23,8 +23,18 @@ import (
 	"os"
 )
 
+type Command struct {
+	CommandName string   `json:"name,omitempty"`
+	Args        []string `json:"args,omitempty"`
+}
+
+type Attrs struct {
+	Command Command `json:"cmd,omitempty"`
+	Grpc    string  `json:"grpc,omitempty"`
+}
+
 type OcicryptConfig struct {
-	KeyProviderConfig map[string]interface{} `json:"key-providers"`
+	KeyProviderConfig map[string]Attrs `json:"key-providers"`
 }
 
 const ENVVARNAME = "OCICRYPT_KEYPROVIDER_CONFIG"
@@ -65,4 +75,3 @@ func GetConfiguration() (*OcicryptConfig, error) {
 	}
 	return ic, nil
 }
-

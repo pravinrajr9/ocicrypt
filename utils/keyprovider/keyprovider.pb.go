@@ -103,8 +103,8 @@ func (m *KeyProviderKeyWrapProtocolOutput) GetKeyProviderKeyWrapProtocolOutput()
 }
 
 func init() {
-	proto.RegisterType((*KeyProviderKeyWrapProtocolInput)(nil), "hello.keyProviderKeyWrapProtocolInput")
-	proto.RegisterType((*KeyProviderKeyWrapProtocolOutput)(nil), "hello.keyProviderKeyWrapProtocolOutput")
+	proto.RegisterType((*KeyProviderKeyWrapProtocolInput)(nil), "keyprovider.keyProviderKeyWrapProtocolInput")
+	proto.RegisterType((*KeyProviderKeyWrapProtocolOutput)(nil), "keyprovider.keyProviderKeyWrapProtocolOutput")
 }
 
 func init() {
@@ -152,7 +152,7 @@ func NewKeyProviderServiceClient(cc grpc.ClientConnInterface) KeyProviderService
 
 func (c *keyProviderServiceClient) WrapKey(ctx context.Context, in *KeyProviderKeyWrapProtocolInput, opts ...grpc.CallOption) (*KeyProviderKeyWrapProtocolOutput, error) {
 	out := new(KeyProviderKeyWrapProtocolOutput)
-	err := c.cc.Invoke(ctx, "/hello.KeyProviderService/WrapKey", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/keyprovider.KeyProviderService/WrapKey", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +161,7 @@ func (c *keyProviderServiceClient) WrapKey(ctx context.Context, in *KeyProviderK
 
 func (c *keyProviderServiceClient) UnWrapKey(ctx context.Context, in *KeyProviderKeyWrapProtocolInput, opts ...grpc.CallOption) (*KeyProviderKeyWrapProtocolOutput, error) {
 	out := new(KeyProviderKeyWrapProtocolOutput)
-	err := c.cc.Invoke(ctx, "/hello.KeyProviderService/UnWrapKey", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/keyprovider.KeyProviderService/UnWrapKey", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +199,7 @@ func _KeyProviderService_WrapKey_Handler(srv interface{}, ctx context.Context, d
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/hello.KeyProviderService/WrapKey",
+		FullMethod: "/keyprovider.KeyProviderService/WrapKey",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(KeyProviderServiceServer).WrapKey(ctx, req.(*KeyProviderKeyWrapProtocolInput))
@@ -217,7 +217,7 @@ func _KeyProviderService_UnWrapKey_Handler(srv interface{}, ctx context.Context,
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/hello.KeyProviderService/UnWrapKey",
+		FullMethod: "/keyprovider.KeyProviderService/UnWrapKey",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(KeyProviderServiceServer).UnWrapKey(ctx, req.(*KeyProviderKeyWrapProtocolInput))
@@ -226,7 +226,7 @@ func _KeyProviderService_UnWrapKey_Handler(srv interface{}, ctx context.Context,
 }
 
 var _KeyProviderService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "hello.KeyProviderService",
+	ServiceName: "keyprovider.KeyProviderService",
 	HandlerType: (*KeyProviderServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

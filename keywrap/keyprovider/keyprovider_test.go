@@ -192,16 +192,20 @@ func TestKeyWrapKeyProviderCommandSuccess(t *testing.T) {
 	//Config File with executable for key wrap
 	configFile1 := `{"key-providers": {
                 "keyprovider-1": {
-                   "cmd": "/usr/lib/keyprovider-1-wrapkey",
-                   "args": []
+					"cmd": {
+					   "name": "/usr/lib/keyprovider-1-wrapkey",
+					   "args": []
+					}
                 }
         }}
         `
 	//Config File with executable for key unwrap
 	configFile2 := `{"key-providers": {
                 "keyprovider-1": {
-                   "cmd": "/usr/lib/keyprovider-1-unwrapkey",
-                   "args": []
+					"cmd": {
+					   "name": "/usr/lib/keyprovider-1-unwrapkey",
+					   "args": []
+					}
                 }
         }}
         `
@@ -252,24 +256,32 @@ func TestKeyWrapKeyProviderCommandFail(t *testing.T) {
 	//Config File with executable for key wrap
 	configFile1 := `{"key-providers": {
                 "keyprovider-1": {
-                   "cmd": "/usr/lib/keyprovider-1-wrapkey",
-                   "args": []
+					"cmd": {
+					   "name": "/usr/lib/keyprovider-1-wrapkey",
+					   "args": []
+					}
                 },
-		"keyprovider-2": {
-                   "cmd": "/usr/lib/keyprovider-2-wrapkey",
-                   "args": []
+		        "keyprovider-2": {
+					"cmd": {
+					   "name": "/usr/lib/keyprovider-2-wrapkey",
+					   "args": []
+					}
                 }
         }}
         `
 	//Config File with executable for key unwrap
 	configFile2 := `{"key-providers": {
-                "keyprovider-1": {
-                   "cmd": "/usr/lib/keyprovider-1-unwrapkey",
-                   "args": []
-                },
-		"keyprovider-2": {
-                   "cmd": "/usr/lib/keyprovider-2-unwrapkey",
-                   "args": []
+                  "keyprovider-1": {
+                      "cmd": {
+					      "name": "/usr/lib/keyprovider-1-unwrapkey",
+                          "args": []
+					   }
+                    },
+		           "keyprovider-2": {
+					"cmd": {
+					   "name": "/usr/lib/keyprovider-2-unwrapkey",
+					   "args": []
+					}
                 }
         }}
         `
@@ -317,12 +329,14 @@ func TestKeyWrapKeyProviderGRPCSuccess(t *testing.T) {
                 "keyprovider-1": {
                    "grpc": "localhost:50051"
                 },
-	        "keyprovider-2": {
+	            "keyprovider-2": {
                    "grpc": "localhost:3990"
                 },
                 "keyprovider-3": {
-                   "cmd": "/usr/lib/unwrapkey",
-                   "args": []
+                   "cmd": {
+					   "name": "/usr/lib/keyprovider-2-unwrapkey",
+					   "args": []
+					}
                 }
 
         }}
