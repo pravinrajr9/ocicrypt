@@ -52,10 +52,9 @@ func init() {
 	ic, err := keyprovider_config.GetConfiguration()
 	if err != nil {
 		log.Error(err)
-	}
-	if ic != nil {
-		for provider, args := range ic.KeyProviderConfig {
-			RegisterKeyWrapper("keyprovider."+provider, keyprovider.NewKeyWrapper(provider, args))
+	} else if ic != nil {
+		for provider, attrs := range ic.KeyProviderConfig {
+			RegisterKeyWrapper("keyprovider."+provider, keyprovider.NewKeyWrapper(provider, attrs))
 		}
 	}
 }

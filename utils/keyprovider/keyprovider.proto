@@ -1,7 +1,7 @@
 syntax = "proto3";
 
-package hello;
-option go_package = "hellopb";
+package keyprovider;
+option go_package = "keyprovider";
 
 message keyProviderKeyWrapProtocolInput {
     bytes KeyProviderKeyWrapProtocolInput = 1;
@@ -13,5 +13,5 @@ message keyProviderKeyWrapProtocolOutput {
 
 service KeyProviderService {
     rpc WrapKey(keyProviderKeyWrapProtocolInput) returns (keyProviderKeyWrapProtocolOutput) {};
-	rpc UnWrapKey(keyProviderKeyWrapProtocolInput) returns (keyProviderKeyWrapProtocolOutput) {};
+    rpc UnWrapKey(keyProviderKeyWrapProtocolInput) returns (keyProviderKeyWrapProtocolOutput) {};
 }
