@@ -20,7 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/containers/ocicrypt/config"
-	keyprovider_config "github.com/containers/ocicrypt/config/keyprovider-config"
+	keyproviderconfig "github.com/containers/ocicrypt/config/keyprovider-config"
 	"github.com/containers/ocicrypt/keywrap"
 	"github.com/containers/ocicrypt/utils"
 	keyproviderpb "github.com/containers/ocicrypt/utils/keyprovider"
@@ -32,7 +32,7 @@ import (
 
 type keyProviderKeyWrapper struct {
 	provider string
-	attrs    keyprovider_config.Attrs
+	attrs    keyproviderconfig.Attrs
 }
 
 func (kw *keyProviderKeyWrapper) GetAnnotationID() string {
@@ -40,7 +40,7 @@ func (kw *keyProviderKeyWrapper) GetAnnotationID() string {
 }
 
 // NewKeyWrapper returns a new key wrapping interface using keyprovider
-func NewKeyWrapper(p string, a keyprovider_config.Attrs) keywrap.KeyWrapper {
+func NewKeyWrapper(p string, a keyproviderconfig.Attrs) keywrap.KeyWrapper {
 	return &keyProviderKeyWrapper{provider: p, attrs: a}
 }
 
@@ -60,7 +60,7 @@ type KeyProviderKeyWrapProtocolInput struct {
 	KeyUnwrapParams KeyUnwrapParams `json:"keyunwrapparams,omitempty"`
 }
 
-type KeyProviderKeyWrapProtocolOuput struct {
+type KeyProviderKeyWrapProtocolOutput struct {
 	// KeyWrapResult encodes the results to key wrap if operation is to wrap
 	KeyWrapResults KeyWrapResults `json:"keywrapresults,omitempty"`
 	// KeyUnwrapResult encodes the result to key unwrap if operation is to unwrap
@@ -110,7 +110,7 @@ func (kw *keyProviderKeyWrapper) WrapKeys(ec *config.EncryptConfig, optsData []b
 	// Iterate over the ec.Parameters and execute appropriate binaries or dial a grpc based on protocol mentioned in encryption config
 	for provider := range ec.Parameters {
 		if kw.provider == provider {
-			if !reflect.DeepEqual(kw.attrs.Command, keyprovider_config.Command{}) {
+			if !reflect.DeepEqual(kw.attrs.Command, keyproviderconfig.Command{}) {
 				protocolOuput, err := getProviderCommandOutput(input, kw.attrs.Command)
 				if err != nil {
 					return nil, errors.Wrap(err, "error while retrieving keyprovider protocol command output")
@@ -147,7 +147,7 @@ func (kw *keyProviderKeyWrapper) UnwrapKey(dc *config.DecryptConfig, jsonString 
 		return nil, err
 	}
 
-	if !reflect.DeepEqual(kw.attrs.Command, keyprovider_config.Command{}) {
+	if !reflect.DeepEqual(kw.attrs.Command, keyproviderconfig.Command{}) {
 		protocolOuput, err := getProviderCommandOutput(input, kw.attrs.Command)
 		if err != nil {
 			// If err is not nil, then ignore it and continue with rest of the given keyproviders
@@ -168,8 +168,8 @@ func (kw *keyProviderKeyWrapper) UnwrapKey(dc *config.DecryptConfig, jsonString 
 	}
 }
 
-func getProviderGRPCOutput(input []byte, connString string, operation KeyProviderKeyWrapProtocolOperation) (*KeyProviderKeyWrapProtocolOuput, error) {
-	var protocolOuput KeyProviderKeyWrapProtocolOuput
+func getProviderGRPCOutput(input []byte, connString string, operation KeyProviderKeyWrapProtocolOperation) (*KeyProviderKeyWrapProtocolOutput, error) {
+	var protocolOuput KeyProviderKeyWrapProtocolOutput
 	var grpcOutput *keyproviderpb.KeyProviderKeyWrapProtocolOutput
 	cc, err := grpc.Dial(connString, grpc.WithInsecure())
 	defer func() {
@@ -209,9 +209,9 @@ func getProviderGRPCOutput(input []byte, connString string, operation KeyProvide
 	return &protocolOuput, nil
 }
 
-func getProviderCommandOutput(input []byte, command keyprovider_config.Command) (*KeyProviderKeyWrapProtocolOuput, error) {
+func getProviderCommandOutput(input []byte, command keyproviderconfig.Command) (*KeyProviderKeyWrapProtocolOutput, error) {
 
-	var protocolOuput KeyProviderKeyWrapProtocolOuput
+	var protocolOuput KeyProviderKeyWrapProtocolOutput
 	// Convert interface to command structure
 	respBytes, err := runner.Exec(command.CommandName, command.Args, input)
 	if err != nil{

@@ -14,7 +14,7 @@
    limitations under the License.
 */
 
-package keyprovider_config
+package config
 
 import (
 	"encoding/json"

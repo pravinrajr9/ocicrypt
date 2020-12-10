@@ -87,7 +87,7 @@ func (*server) WrapKey(ctx context.Context, request *keyproviderpb.KeyProviderKe
 		WrapType:   "AES",
 	})
 
-	protocolOuputSerialized, _ := json.Marshal(KeyProviderKeyWrapProtocolOuput{
+	protocolOuputSerialized, _ := json.Marshal(KeyProviderKeyWrapProtocolOutput{
 		KeyWrapResults: KeyWrapResults{Annotation: jsonString},
 	})
 
@@ -120,7 +120,7 @@ func (*server) UnWrapKey(ctx context.Context, request *keyproviderpb.KeyProvider
 		return nil, err
 	}
 
-	protocolOuputSerialized, _ := json.Marshal(KeyProviderKeyWrapProtocolOuput{
+	protocolOuputSerialized, _ := json.Marshal(KeyProviderKeyWrapProtocolOutput{
 		KeyUnwrapResults: KeyUnwrapResults{OptsData: unwrappedKey},
 	})
 	return &keyproviderpb.KeyProviderKeyWrapProtocolOutput{
@@ -152,7 +152,7 @@ func (r TestRunner) Exec(cmdName string, args []string, input []byte) ([]byte, e
 			WrapType:   "AES",
 		})
 
-		return json.Marshal(KeyProviderKeyWrapProtocolOuput{
+		return json.Marshal(KeyProviderKeyWrapProtocolOutput{
 			KeyWrapResults: KeyWrapResults{
 				Annotation: jsonString,
 			},
@@ -179,7 +179,7 @@ func (r TestRunner) Exec(cmdName string, args []string, input []byte) ([]byte, e
 			return nil, err
 		}
 
-		return json.Marshal(KeyProviderKeyWrapProtocolOuput{
+		return json.Marshal(KeyProviderKeyWrapProtocolOutput{
 			KeyUnwrapResults: KeyUnwrapResults{OptsData: unwrappedKey},
 		})
 	}
