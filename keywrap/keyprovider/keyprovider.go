@@ -91,7 +91,7 @@ func init() {
 	runner = utils.Runner{}
 }
 
-// WrapKeys wraps reads out the OCICRYPT_KEYPROVIDER_CONFIG env variable and calls appropriate binary executable/grpc server for wrapping the session key for recipients and gets encrypted optsData, which
+// WrapKeys calls appropriate binary executable/grpc server for wrapping the session key for recipients and gets encrypted optsData, which
 // describe the symmetric key used for encrypting the layer
 func (kw *keyProviderKeyWrapper) WrapKeys(ec *config.EncryptConfig, optsData []byte) ([]byte, error) {
 
@@ -107,32 +107,29 @@ func (kw *keyProviderKeyWrapper) WrapKeys(ec *config.EncryptConfig, optsData []b
 		return nil, err
 	}
 
-	// Iterate over the ec.Parameters and execute appropriate binaries or dial a grpc based on protocol mentioned in encryption config
-	for provider := range ec.Parameters {
-		if kw.provider == provider {
-			if !reflect.DeepEqual(kw.attrs.Command, keyproviderconfig.Command{}) {
-				protocolOuput, err := getProviderCommandOutput(input, kw.attrs.Command)
-				if err != nil {
-					return nil, errors.Wrap(err, "error while retrieving keyprovider protocol command output")
-				}
-				return protocolOuput.KeyWrapResults.Annotation, nil
-			} else if kw.attrs.Grpc != "" {
-				protocolOuput, err := getProviderGRPCOutput(input, kw.attrs.Grpc, OpKeyWrap)
-				if err != nil {
-					return nil, errors.Wrap(err, "error while retrieving keyprovider protocol grpc output")
-				}
-
-				return protocolOuput.KeyWrapResults.Annotation, nil
-			} else {
-				return nil, errors.New("unsupported keyprovider invocation. supported invocation methods are grpc and cmd")
+	if _, ok := ec.Parameters[kw.provider]; ok {
+		if !reflect.DeepEqual(kw.attrs.Command, keyproviderconfig.Command{}) {
+			protocolOuput, err := getProviderCommandOutput(input, kw.attrs.Command)
+			if err != nil {
+				return nil, errors.Wrap(err, "error while retrieving keyprovider protocol command output")
 			}
+			return protocolOuput.KeyWrapResults.Annotation, nil
+		} else if kw.attrs.Grpc != "" {
+			protocolOuput, err := getProviderGRPCOutput(input, kw.attrs.Grpc, OpKeyWrap)
+			if err != nil {
+				return nil, errors.Wrap(err, "error while retrieving keyprovider protocol grpc output")
+			}
+
+			return protocolOuput.KeyWrapResults.Annotation, nil
+		} else {
+			return nil, errors.New("unsupported keyprovider invocation. supported invocation methods are grpc and cmd")
 		}
 	}
 
 	return nil, nil
 }
 
-// UnwrapKey wraps reads out the OCICRYPT_KEYPROVIDER_CONFIG env variable and calls appropriate binary executable/grpc server for unwrapping the session key based on the protocol given in annotation for recipients and gets decrypted optsData,
+// UnwrapKey calls appropriate binary executable/grpc server for unwrapping the session key based on the protocol given in annotation for recipients and gets decrypted optsData,
 // which describe the symmetric key used for decrypting the layer
 func (kw *keyProviderKeyWrapper) UnwrapKey(dc *config.DecryptConfig, jsonString []byte) ([]byte, error) {
 
@@ -155,7 +152,7 @@ func (kw *keyProviderKeyWrapper) UnwrapKey(dc *config.DecryptConfig, jsonString 
 		}
 
 		return protocolOuput.KeyUnwrapResults.OptsData, nil
-	} else if kw.attrs.Grpc != ""  {
+	} else if kw.attrs.Grpc != "" {
 		protocolOuput, err := getProviderGRPCOutput(input, kw.attrs.Grpc, OpKeyUnwrap)
 		if err != nil {
 			// If err is not nil, then ignore it and continue with rest of the given keyproviders
@@ -172,16 +169,15 @@ func getProviderGRPCOutput(input []byte, connString string, operation KeyProvide
 	var protocolOuput KeyProviderKeyWrapProtocolOutput
 	var grpcOutput *keyproviderpb.KeyProviderKeyWrapProtocolOutput
 	cc, err := grpc.Dial(connString, grpc.WithInsecure())
+	if err != nil {
+		return nil, errors.Wrap(err, "error while dialing rpc server")
+	}
 	defer func() {
 		derr := cc.Close()
 		if derr != nil {
 			log.WithError(derr).Error("Error closing grpc socket")
 		}
 	}()
-
-	if err != nil {
-		return nil, errors.Wrap(err, "error while dialing rpc server")
-	}
 
 	client := keyproviderpb.NewKeyProviderServiceClient(cc)
 	req := &keyproviderpb.KeyProviderKeyWrapProtocolInput{
@@ -214,7 +210,7 @@ func getProviderCommandOutput(input []byte, command keyproviderconfig.Command) (
 	var protocolOuput KeyProviderKeyWrapProtocolOutput
 	// Convert interface to command structure
 	respBytes, err := runner.Exec(command.CommandName, command.Args, input)
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 	err = json.Unmarshal(respBytes, &protocolOuput)

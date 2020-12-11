@@ -74,7 +74,7 @@ func processRecipientKeys(recipients []string) ([][]byte, [][]byte, [][]byte, []
 			} else {
 				return nil, nil, nil, nil, nil, nil, errors.New("Provided file is not a public key")
 			}
-		case "key-provider":
+		case "provider":
 			keyProvider = append(keyProvider, []byte(value))
 		default:
 			return nil, nil, nil, nil, nil, nil, errors.New("Provided protocol not recognized")

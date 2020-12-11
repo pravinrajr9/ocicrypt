@@ -27,11 +27,11 @@ named prefix of the protocol, for example, the protocol "org.opencontainers.imag
 would appear like the following:
 
 ```code
-OCICRPYT_KEYPROVIDER_CONFIG=/etc/ocicrypt_keyprovider.json skopeo copy --encryption-key keyprovider:isecl:some-params
+OCICRPYT_KEYPROVIDER_CONFIG=/etc/ocicrypt_keyprovider.json skopeo copy --encryption-key provider:isecl:some-params
 ```
 
 The same would follow for decryption config
 
 ```code
-OCICRPYT_KEYPROVIDER_CONFIG=/etc/ocicrypt_keyprovider.json skopeo copy --decryption-key keyprovider:isecl:some-params
+OCICRPYT_KEYPROVIDER_CONFIG=/etc/ocicrypt_keyprovider.json skopeo copy --decryption-key provider:isecl:some-params
 ```

@@ -142,6 +142,7 @@ func EncryptLayer(ec *config.EncryptConfig, encOrPlainLayerReader io.Reader, des
 		}
 
 		newAnnotations := make(map[string]string)
+		keysWrapped := false
 		for annotationsID, scheme := range keyWrapperAnnotations {
 			b64Annotations := desc.Annotations[annotationsID]
 			keywrapper := GetKeyWrapper(scheme)
@@ -150,10 +151,14 @@ func EncryptLayer(ec *config.EncryptConfig, encOrPlainLayerReader io.Reader, des
 				return nil, err
 			}
 			if b64Annotations != "" {
+				keysWrapped = true
 				newAnnotations[annotationsID] = b64Annotations
 			}
 		}
 
+		if !keysWrapped {
+			return nil, errors.New("no wrapped keys produced by encryption")
+		}
 		newAnnotations["org.opencontainers.image.enc.pubopts"] = base64.StdEncoding.EncodeToString(pubOptsData)
 
 		if len(newAnnotations) == 0 {
