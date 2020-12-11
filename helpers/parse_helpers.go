@@ -152,7 +152,7 @@ func processPrivateKeyFiles(keyFilesAndPwds []string) ([][]byte, [][]byte, [][]b
 	for _, keyfileAndPwd := range keyFilesAndPwds {
 		var password []byte
 		// skip for "provider" protocol
-		if strings.Contains(keyfileAndPwd, "provider"){
+		if strings.HasPrefix(keyfileAndPwd, "provider:"){
 			continue
 		}
 		parts := strings.Split(keyfileAndPwd, ":")
