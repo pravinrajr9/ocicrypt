@@ -132,9 +132,8 @@ func (kw *keyProviderKeyWrapper) WrapKeys(ec *config.EncryptConfig, optsData []b
 // UnwrapKey calls appropriate binary executable/grpc server for unwrapping the session key based on the protocol given in annotation for recipients and gets decrypted optsData,
 // which describe the symmetric key used for decrypting the layer
 func (kw *keyProviderKeyWrapper) UnwrapKey(dc *config.DecryptConfig, jsonString []byte) ([]byte, error) {
-
 	input, err := json.Marshal(KeyProviderKeyWrapProtocolInput{
-		Operation: OpKeyWrap,
+		Operation: OpKeyUnwrap,
 		KeyUnwrapParams: KeyUnwrapParams{
 			Dc:         dc,
 			Annotation: jsonString,
@@ -206,7 +205,6 @@ func getProviderGRPCOutput(input []byte, connString string, operation KeyProvide
 }
 
 func getProviderCommandOutput(input []byte, command keyproviderconfig.Command) (*KeyProviderKeyWrapProtocolOutput, error) {
-
 	var protocolOuput KeyProviderKeyWrapProtocolOutput
 	// Convert interface to command structure
 	respBytes, err := runner.Exec(command.CommandName, command.Args, input)

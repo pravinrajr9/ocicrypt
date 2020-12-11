@@ -54,7 +54,7 @@ func processRecipientKeys(recipients []string) ([][]byte, [][]byte, [][]byte, []
 
 		case "pkcs7":
 			tmp, err := ioutil.ReadFile(value)
-			if err != nil  {
+			if err != nil {
 				return nil, nil, nil, nil, nil, nil, errors.Wrap(err, "Unable to read file")
 			}
 			if !encutils.IsCertificate(tmp) {
@@ -151,7 +151,10 @@ func processPrivateKeyFiles(keyFilesAndPwds []string) ([][]byte, [][]byte, [][]b
 	// keys needed for decryption in case of adding a recipient
 	for _, keyfileAndPwd := range keyFilesAndPwds {
 		var password []byte
-
+		// skip for "provider" protocol
+		if strings.Contains(keyfileAndPwd, "provider"){
+			continue
+		}
 		parts := strings.Split(keyfileAndPwd, ":")
 		if len(parts) == 2 {
 			password, err = processPwdString(parts[1])
@@ -198,13 +201,14 @@ func CreateDecryptCryptoConfig(keys []string, decRecipients []string) (encconfig
 		return encconfig.CryptoConfig{}, err
 	}
 
-	// x509 certs can also be passed in via keys
-	x509FromKeys, err := processx509Certs(keys)
-	if err != nil {
-		return encconfig.CryptoConfig{}, err
+	if len(x509s) > 0 {
+		// x509 certs can also be passed in via keys
+		x509FromKeys, err := processx509Certs(keys)
+		if err != nil {
+			return encconfig.CryptoConfig{}, err
+		}
+		x509s = append(x509s, x509FromKeys...)
 	}
-	x509s = append(x509s, x509FromKeys...)
-
 	gpgSecretKeyRingFiles, gpgSecretKeyPasswords, privKeys, privKeysPasswords, pkcs11Yamls, err := processPrivateKeyFiles(keys)
 	if err != nil {
 		return encconfig.CryptoConfig{}, err
@@ -246,18 +250,20 @@ func CreateDecryptCryptoConfig(keys []string, decRecipients []string) (encconfig
 	}
 	*/
 
-	x509sCc, err := encconfig.DecryptWithX509s(x509s)
-	if err != nil {
-		return encconfig.CryptoConfig{}, err
+	if len(x509s) > 0 {
+		x509sCc, err := encconfig.DecryptWithX509s(x509s)
+		if err != nil {
+			return encconfig.CryptoConfig{}, err
+		}
+		ccs = append(ccs, x509sCc)
 	}
-	ccs = append(ccs, x509sCc)
-
-	privKeysCc, err := encconfig.DecryptWithPrivKeys(privKeys, privKeysPasswords)
-	if err != nil {
-		return encconfig.CryptoConfig{}, err
+	if len(privKeys) > 0 {
+		privKeysCc, err := encconfig.DecryptWithPrivKeys(privKeys, privKeysPasswords)
+		if err != nil {
+			return encconfig.CryptoConfig{}, err
+		}
+		ccs = append(ccs, privKeysCc)
 	}
-	ccs = append(ccs, privKeysCc)
-
 	if len(pkcs11Yamls) > 0 {
 		p11conf, err := pkcs11config.GetUserPkcs11Config()
 		if err != nil {
@@ -270,7 +276,7 @@ func CreateDecryptCryptoConfig(keys []string, decRecipients []string) (encconfig
 		ccs = append(ccs, pkcs11PrivKeysCc)
 	}
 
-	if len(keyProvider) >0 {
+	if len(keyProvider) > 0 {
 		keyProviderCc, err := encconfig.EncryptWithKeyProvider(keyProvider)
 		if err != nil {
 			return encconfig.CryptoConfig{}, err
@@ -344,7 +350,7 @@ func CreateCryptoConfig(recipients []string, keys []string) (encconfig.CryptoCon
 			encryptCcs = append(encryptCcs, pkcs11Cc)
 		}
 
-		if len(keyProvider) >0 {
+		if len(keyProvider) > 0 {
 			keyProviderCc, err := encconfig.EncryptWithKeyProvider(keyProvider)
 			if err != nil {
 				return encconfig.CryptoConfig{}, err
