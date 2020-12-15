@@ -1,6 +1,6 @@
 # Ocicrypt keyprovider protocol
 
-Ocicrypt supports the use of an key-provider protocol. This allows the ability to encrypt and decrypt container image using the key that can be retrieved from any key management service.
+Ocicrypt supports the use of a key-provider protocol. This allows the ability to encrypt and decrypt container image using the key that can be retrieved from any key management service.
 The config file consists for list of protocols that can be used for either encryption or decryption. User can implement either a binary executable or grpc server for fetching the wrapped(during image encryption) or unwrapped key(during image decryption) using any key management service.
 
 ## Example of config file
