@@ -27,12 +27,11 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
-	"reflect"
 )
 
 type keyProviderKeyWrapper struct {
 	provider string
-	attrs    keyproviderconfig.Attrs
+	attrs    keyproviderconfig.KeyProviderAttrs
 }
 
 func (kw *keyProviderKeyWrapper) GetAnnotationID() string {
@@ -40,7 +39,7 @@ func (kw *keyProviderKeyWrapper) GetAnnotationID() string {
 }
 
 // NewKeyWrapper returns a new key wrapping interface using keyprovider
-func NewKeyWrapper(p string, a keyproviderconfig.Attrs) keywrap.KeyWrapper {
+func NewKeyWrapper(p string, a keyproviderconfig.KeyProviderAttrs) keywrap.KeyWrapper {
 	return &keyProviderKeyWrapper{provider: p, attrs: a}
 }
 
@@ -51,6 +50,7 @@ var (
 	OpKeyUnwrap KeyProviderKeyWrapProtocolOperation = "keyunwrap"
 )
 
+// KeyProviderKeyWrapProtocolInput defines the input to the key provider binary or grpc method.
 type KeyProviderKeyWrapProtocolInput struct {
 	// Operation is either "keywrap" or "keyunwrap"
 	Operation KeyProviderKeyWrapProtocolOperation `json:"op"`
@@ -60,6 +60,7 @@ type KeyProviderKeyWrapProtocolInput struct {
 	KeyUnwrapParams KeyUnwrapParams `json:"keyunwrapparams,omitempty"`
 }
 
+// KeyProviderKeyWrapProtocolOutput defines the output of the key provider binary or grpc method.
 type KeyProviderKeyWrapProtocolOutput struct {
 	// KeyWrapResult encodes the results to key wrap if operation is to wrap
 	KeyWrapResults KeyWrapResults `json:"keywrapresults,omitempty"`
@@ -108,7 +109,7 @@ func (kw *keyProviderKeyWrapper) WrapKeys(ec *config.EncryptConfig, optsData []b
 	}
 
 	if _, ok := ec.Parameters[kw.provider]; ok {
-		if !reflect.DeepEqual(kw.attrs.Command, keyproviderconfig.Command{}) {
+		if kw.attrs.Command != nil {
 			protocolOuput, err := getProviderCommandOutput(input, kw.attrs.Command)
 			if err != nil {
 				return nil, errors.Wrap(err, "error while retrieving keyprovider protocol command output")
@@ -143,7 +144,7 @@ func (kw *keyProviderKeyWrapper) UnwrapKey(dc *config.DecryptConfig, jsonString 
 		return nil, err
 	}
 
-	if !reflect.DeepEqual(kw.attrs.Command, keyproviderconfig.Command{}) {
+	if kw.attrs.Command != nil {
 		protocolOuput, err := getProviderCommandOutput(input, kw.attrs.Command)
 		if err != nil {
 			// If err is not nil, then ignore it and continue with rest of the given keyproviders
@@ -193,6 +194,8 @@ func getProviderGRPCOutput(input []byte, connString string, operation KeyProvide
 		if err != nil {
 			return nil, errors.Wrap(err, "Error from grpc method")
 		}
+	} else {
+		return nil, errors.New("Unsupported operation")
 	}
 
 	respBytes := grpcOutput.GetKeyProviderKeyWrapProtocolOutput()
@@ -204,10 +207,10 @@ func getProviderGRPCOutput(input []byte, connString string, operation KeyProvide
 	return &protocolOuput, nil
 }
 
-func getProviderCommandOutput(input []byte, command keyproviderconfig.Command) (*KeyProviderKeyWrapProtocolOutput, error) {
+func getProviderCommandOutput(input []byte, command *keyproviderconfig.Command) (*KeyProviderKeyWrapProtocolOutput, error) {
 	var protocolOuput KeyProviderKeyWrapProtocolOutput
 	// Convert interface to command structure
-	respBytes, err := runner.Exec(command.CommandName, command.Args, input)
+	respBytes, err := runner.Exec(command.Path, command.Args, input)
 	if err != nil {
 		return nil, err
 	}

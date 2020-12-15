@@ -20,7 +20,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	keyprovider_config "github.com/containers/ocicrypt/config/keyprovider-config"
+	keyproviderconfig "github.com/containers/ocicrypt/config/keyprovider-config"
 	"github.com/containers/ocicrypt/keywrap/keyprovider"
 	"io"
 	"strings"
@@ -49,7 +49,7 @@ func init() {
 	RegisterKeyWrapper("jwe", jwe.NewKeyWrapper())
 	RegisterKeyWrapper("pkcs7", pkcs7.NewKeyWrapper())
 	RegisterKeyWrapper("pkcs11", pkcs11.NewKeyWrapper())
-	ic, err := keyprovider_config.GetConfiguration()
+	ic, err := keyproviderconfig.GetConfiguration()
 	if err != nil {
 		log.Error(err)
 	} else if ic != nil {

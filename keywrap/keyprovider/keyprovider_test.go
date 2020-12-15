@@ -193,7 +193,7 @@ func TestKeyWrapKeyProviderCommandSuccess(t *testing.T) {
 	configFile1 := `{"key-providers": {
                 "keyprovider-1": {
 					"cmd": {
-					   "name": "/usr/lib/keyprovider-1-wrapkey",
+					   "path": "/usr/lib/keyprovider-1-wrapkey",
 					   "args": []
 					}
                 }
@@ -203,7 +203,7 @@ func TestKeyWrapKeyProviderCommandSuccess(t *testing.T) {
 	configFile2 := `{"key-providers": {
                 "keyprovider-1": {
 					"cmd": {
-					   "name": "/usr/lib/keyprovider-1-unwrapkey",
+					   "path": "/usr/lib/keyprovider-1-unwrapkey",
 					   "args": []
 					}
                 }
@@ -257,13 +257,13 @@ func TestKeyWrapKeyProviderCommandFail(t *testing.T) {
 	configFile1 := `{"key-providers": {
                 "keyprovider-1": {
 					"cmd": {
-					   "name": "/usr/lib/keyprovider-1-wrapkey",
+					   "path": "/usr/lib/keyprovider-1-wrapkey",
 					   "args": []
 					}
                 },
 		        "keyprovider-2": {
 					"cmd": {
-					   "name": "/usr/lib/keyprovider-2-wrapkey",
+					   "path": "/usr/lib/keyprovider-2-wrapkey",
 					   "args": []
 					}
                 }
@@ -273,13 +273,13 @@ func TestKeyWrapKeyProviderCommandFail(t *testing.T) {
 	configFile2 := `{"key-providers": {
                   "keyprovider-1": {
                       "cmd": {
-					      "name": "/usr/lib/keyprovider-1-unwrapkey",
+					      "path": "/usr/lib/keyprovider-1-unwrapkey",
                           "args": []
 					   }
                     },
 		           "keyprovider-2": {
 					"cmd": {
-					   "name": "/usr/lib/keyprovider-2-unwrapkey",
+					   "path": "/usr/lib/keyprovider-2-unwrapkey",
 					   "args": []
 					}
                 }
@@ -334,7 +334,7 @@ func TestKeyWrapKeyProviderGRPCSuccess(t *testing.T) {
                 },
                 "keyprovider-3": {
                    "cmd": {
-					   "name": "/usr/lib/keyprovider-2-unwrapkey",
+					   "path": "/usr/lib/keyprovider-2-unwrapkey",
 					   "args": []
 					}
                 }

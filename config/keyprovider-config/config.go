@@ -23,18 +23,22 @@ import (
 	"os"
 )
 
+// Command describes the structure of command, it consist of path and args, where path defines the location of
+// binary executable and args are passed on to the binary executable
 type Command struct {
-	CommandName string   `json:"name,omitempty"`
-	Args        []string `json:"args,omitempty"`
+	Path string   `json:"path,omitempty"`
+	Args []string `json:"args,omitempty"`
 }
 
-type Attrs struct {
-	Command Command `json:"cmd,omitempty"`
-	Grpc    string  `json:"grpc,omitempty"`
+// KeyProviderAttrs describes the structure of key provider, it defines the way of invocation to key provider
+type KeyProviderAttrs struct {
+	Command *Command `json:"cmd,omitempty"`
+	Grpc    string   `json:"grpc,omitempty"`
 }
 
+// OcicryptConfig represents the format of an ocicrypt_provider.conf config file
 type OcicryptConfig struct {
-	KeyProviderConfig map[string]Attrs `json:"key-providers"`
+	KeyProviderConfig map[string]KeyProviderAttrs `json:"key-providers"`
 }
 
 const ENVVARNAME = "OCICRYPT_KEYPROVIDER_CONFIG"
