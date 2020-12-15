@@ -123,7 +123,7 @@ func (kw *keyProviderKeyWrapper) WrapKeys(ec *config.EncryptConfig, optsData []b
 
 			return protocolOuput.KeyWrapResults.Annotation, nil
 		} else {
-			return nil, errors.New("unsupported keyprovider invocation. supported invocation methods are grpc and cmd")
+			return nil, errors.New("Unsupported keyprovider invocation. Supported invocation methods are grpc and cmd")
 		}
 	}
 
@@ -161,7 +161,7 @@ func (kw *keyProviderKeyWrapper) UnwrapKey(dc *config.DecryptConfig, jsonString 
 
 		return protocolOuput.KeyUnwrapResults.OptsData, nil
 	} else {
-		return nil, errors.New("unsupported keyprovider invocation. supported invocation methods are grpc and cmd ")
+		return nil, errors.New("Unsupported keyprovider invocation. Supported invocation methods are grpc and cmd")
 	}
 }
 

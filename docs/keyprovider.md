@@ -6,21 +6,21 @@ The config file consists for list of protocols that can be used for either encry
 ## Example of config file
 
 ```code
-       {
-       	"key-providers": {
-       		"isecl": {
-       			"path": "/usr/lib/ocicrypt-isecl",
-       			"args": []
-       		},
-       		"keyprotect": {
-       			"path": "/usr/lib/ocicrypt-keyprotect",
-       			"args": []
-       		},
-       		"keyvault": {
-       			"grpc": "localhost:50051"
-       		}
-       	}
-       }
+    {
+        "key-providers": {
+            "isecl": {
+                "path": "/usr/lib/ocicrypt-isecl",
+                "args": []
+            },
+            "keyprotect": {
+                "path": "/usr/lib/ocicrypt-keyprotect",
+                "args": []
+            },
+            "keyvault": {
+                "grpc": "localhost:50051"
+            }
+        }
+    }
 ```
 
 ## Encrpyting/Decrypting examples
@@ -29,17 +29,17 @@ The config file consists for list of protocols that can be used for either encry
 
 2. Configure the ${HOME}/ocirypt.conf like below
 ```code
-   $ cat /home/vagrant/ocicrypt.conf
-   {
-      "key-providers": {
-          "simplecrypt": {
-              "cmd": {
-                  "name":"/home/vagrant/simplecrypt",
-                  "args": []
-              }
-          }
-      }
-   }   
+    $ cat /home/vagrant/ocicrypt.conf
+    {
+        "key-providers": {
+            "simplecrypt": {
+                "cmd": {
+                    "name":"/home/vagrant/simplecrypt",
+                    "args": []
+                }
+            }
+        }
+    }   
 ```
 
 3. Prepare a sample image to encrypt or use an already built image from any public/private registry by pulling it into local repository and Image should be oci complaint
