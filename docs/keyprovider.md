@@ -5,7 +5,8 @@ The config file consists for list of protocols that can be used for either encry
 
 ## Example of config file
 
-```code{
+```code
+       {
        	"key-providers": {
        		"isecl": {
        			"path": "/usr/lib/ocicrypt-isecl",
