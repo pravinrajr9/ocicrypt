@@ -196,7 +196,7 @@ func CreateDecryptCryptoConfig(keys []string, decRecipients []string) (encconfig
 	ccs := []encconfig.CryptoConfig{}
 
 	// x509 cert is needed for PKCS7 decryption
-	_, _, x509s, _, _, _, err := processRecipientKeys(decRecipients)
+	_, _, x509s, _, _, keyProvider, err := processRecipientKeys(decRecipients)
 	if err != nil {
 		return encconfig.CryptoConfig{}, err
 	}
@@ -275,7 +275,13 @@ func CreateDecryptCryptoConfig(keys []string, decRecipients []string) (encconfig
 		}
 		ccs = append(ccs, pkcs11PrivKeysCc)
 	}
-
+	if len(keyProvider) > 0 {
+		keyProviderCc, err := encconfig.DecryptWithKeyProvider(keyProvider)
+		if err != nil {
+			return encconfig.CryptoConfig{}, err
+		}
+		ccs = append(ccs, keyProviderCc)
+	}
 	return encconfig.CombineCryptoConfigs(ccs), nil
 }
 
